@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lead Webhook Receiver</title>
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- Signals Gateway Pixel Code -->
+    <script>
+    !function(a,h,e,v,n,t,s)
+        {if(a.cbq)return;n=a.cbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!a._cbq)a._cbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=h.createElement(e);t.async=!0;
+        t.src=v;s=h.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://capig.23insurance.com/sdk/7254247484978822568/events.js');
+        cbq('setHost', 'https://capig.23insurance.com/');
+        cbq('init', '7254247484978822568');
+    </script>
+</head>
+<body style="margin:0; padding:20px; font-family: Arial, sans-serif; background: #f5f5f5;">
+    
+    <div id="status" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2>Processing Lead...</h2>
+        <div id="details"></div>
+    </div>
+
+    <script>
+        // Function to get URL parameters
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                email: params.get('email'),
+                phone: params.get('phone'),
+                first_name: params.get('first_name'),
+                last_name: params.get('last_name'),
+                source: params.get('source') || 'heyflow'
+            };
+        }
+
+        // Function to process POST data (if sent via POST instead of GET)
+        function processPostData() {
+            // This would need server-side processing for actual POST data
+            // For now, we'll use URL parameters
+            return getUrlParams();
+        }
+
+        // Main processing function
+        function processLead() {
+            const leadData = getUrlParams();
+            
+            // Display what we received
+            document.getElementById('details').innerHTML = `
+                <p><strong>Email:</strong> ${leadData.email || 'Not provided'}</p>
+                <p><strong>Phone:</strong> ${leadData.phone || 'Not provided'}</p>
+                <p><strong>Name:</strong> ${leadData.first_name || ''} ${leadData.last_name || ''}</p>
+                <p><strong>Source:</strong> ${leadData.source}</p>
+            `;
+
+            // Send to Signals Gateway if we have email
+            if (leadData.email) {
+                try {
+                    cbq('track', 'Lead', {
+                        em: leadData.email,
+                        ph: leadData.phone,
+                        fn: leadData.first_name,
+                        ln: leadData.last_name
+                    });
+                    
+                    document.getElementById('status').innerHTML = `
+                        <h2 style="color: green;">✓ Lead Processed Successfully</h2>
+                        <div id="details">
+                            <p><strong>Email:</strong> ${leadData.email}</p>
+                            <p><strong>Phone:</strong> ${leadData.phone || 'Not provided'}</p>
+                            <p><strong>Name:</strong> ${leadData.first_name || ''} ${leadData.last_name || ''}</p>
+                            <p><strong>Status:</strong> Sent to Signals Gateway</p>
+                        </div>
+                    `;
+                    
+                    console.log('Lead sent to Signals Gateway:', leadData);
+                    
+                } catch (error) {
+                    console.error('Error sending to Signals Gateway:', error);
+                    document.getElementById('status').innerHTML = `
+                        <h2 style="color: red;">✗ Error Processing Lead</h2>
+                        <p>Please check console for details.</p>
+                    `;
+                }
+            } else {
+                document.getElementById('status').innerHTML = `
+                    <h2 style="color: orange;">⚠ Missing Email</h2>
+                    <p>Email is required to process the lead.</p>
+                `;
+            }
+        }
+
+        // Process the lead when page loads
+        setTimeout(processLead, 1000); // Wait 1 second for pixel to load
+    </script>
+</body>
+</html>
