@@ -26,6 +26,13 @@
     </div>
 
     <script>
+        // Function to get client IP (best effort)
+        let clientIP = '';
+        fetch('https://api.ipify.org?format=json')
+            .then(response => response.json())
+            .then(data => clientIP = data.ip)
+            .catch(() => clientIP = 'unknown');
+
         // Function to get URL parameters
         function getUrlParams() {
             const params = new URLSearchParams(window.location.search);
@@ -34,6 +41,13 @@
                 phone: params.get('phone'),
                 first_name: params.get('first_name'),
                 last_name: params.get('last_name'),
+                zip: params.get('zip'),
+                utm_source: params.get('utm_source'),
+                utm_medium: params.get('utm_medium'),
+                utm_campaign: params.get('utm_campaign'),
+                flow_id: params.get('flow_id'),
+                fbclid: params.get('fbclid'),
+                fbc: params.get('fbc'),
                 source: params.get('source') || 'heyflow'
             };
         }
@@ -54,17 +68,45 @@
                 <p><strong>Email:</strong> ${leadData.email || 'Not provided'}</p>
                 <p><strong>Phone:</strong> ${leadData.phone || 'Not provided'}</p>
                 <p><strong>Name:</strong> ${leadData.first_name || ''} ${leadData.last_name || ''}</p>
-                <p><strong>Source:</strong> ${leadData.source}</p>
+                <p><strong>Zip Code:</strong> ${leadData.zip || 'Not provided'}</p>
+                <p><strong>UTM Source:</strong> ${leadData.utm_source || 'Not provided'}</p>
+                <p><strong>UTM Campaign:</strong> ${leadData.utm_campaign || 'Not provided'}</p>
+                <p><strong>Flow ID:</strong> ${leadData.flow_id || 'Not provided'}</p>
             `;
 
             // Send to Signals Gateway if we have email
             if (leadData.email) {
                 try {
+                    // Generate unique event ID and current timestamp
+                    const eventId = 'lead-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    const eventTime = Math.floor(Date.now() / 1000);
+                    
                     cbq('track', 'Lead', {
+                        // Standard Meta user data fields (proper naming)
                         em: leadData.email,
-                        ph: leadData.phone,
+                        phone_number: leadData.phone, // Corrected from 'ph' to 'phone_number'
                         fn: leadData.first_name,
-                        ln: leadData.last_name
+                        ln: leadData.last_name,
+                        zp: leadData.zip,
+                        
+                        // Facebook click data for attribution
+                        fbc: leadData.fbc,
+                        fbp: leadData.fbclid,
+                        
+                        // Technical data for better matching
+                        client_ip_address: clientIP || 'unknown',
+                        client_user_agent: navigator.userAgent
+                    }, {
+                        // Custom data for campaign tracking
+                        event_time: eventTime,
+                        event_id: eventId,
+                        utm_source: leadData.utm_source,
+                        utm_medium: leadData.utm_medium,
+                        utm_campaign: leadData.utm_campaign,
+                        flow_id: leadData.flow_id,
+                        lead_source: 'heyflow_webhook',
+                        value: 50.00, // Estimated lead value - adjust as needed
+                        currency: 'USD'
                     });
                     
                     document.getElementById('status').innerHTML = `
@@ -73,7 +115,9 @@
                             <p><strong>Email:</strong> ${leadData.email}</p>
                             <p><strong>Phone:</strong> ${leadData.phone || 'Not provided'}</p>
                             <p><strong>Name:</strong> ${leadData.first_name || ''} ${leadData.last_name || ''}</p>
-                            <p><strong>Status:</strong> Sent to Signals Gateway</p>
+                            <p><strong>Zip:</strong> ${leadData.zip || 'Not provided'}</p>
+                            <p><strong>UTM Source:</strong> ${leadData.utm_source || 'Not provided'}</p>
+                            <p><strong>Status:</strong> Sent to Signals Gateway with full data</p>
                         </div>
                     `;
                     
