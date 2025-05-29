@@ -87,38 +87,35 @@
                     const eventId = 'lead-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                     const eventTime = Math.floor(Date.now() / 1000);
                     
+                    // Get fbp cookie for better attribution
+                    const fbpCookie = getCookie('_fbp');
+                    
+                    // FINAL CORRECT FORMAT - Meta CAPI compliant via Signals Gateway
                     cbq('track', 'Lead', {
-                        // REQUIRED Meta parameters
                         action_source: 'website',
-                        event_source_url: 'https://fb.23insurance.com',
-                        
-                        // Standard Meta user data fields (CORRECT FORMAT!)
-                        em: leadData.email,
-                        ph: leadData.phone ? leadData.phone.replace(/\D/g, '') : undefined, // Remove all non-digits, use 'ph' not 'phone_number'
-                        fn: leadData.first_name,
-                        ln: leadData.last_name,
-                        zp: leadData.zip,
-                        
-                        // Facebook click data for attribution
-                        fbc: leadData.fbc,
-                        fbp: leadData.fbclid,
-                        
-                        // Technical data for better matching
-                        client_ip_address: clientIP || 'unknown',
-                        client_user_agent: navigator.userAgent,
-                        
-                        // Event metadata
+                        event_source_url: window.location.href,
                         event_time: eventTime,
-                        event_id: eventId
-                    }, {
-                        // Custom data for campaign tracking
-                        utm_source: leadData.utm_source,
-                        utm_medium: leadData.utm_medium,
-                        utm_campaign: leadData.utm_campaign,
-                        flow_id: leadData.flow_id,
-                        lead_source: 'heyflow_webhook',
-                        value: 50.00,
-                        currency: 'USD'
+                        event_id: eventId,
+                        user_data: {
+                            em: leadData.email,
+                            ph: leadData.phone ? leadData.phone.replace(/\D/g, '') : undefined,
+                            fn: leadData.first_name,
+                            ln: leadData.last_name,
+                            zp: leadData.zip,
+                            fbc: leadData.fbclid ? `fb.1.${Date.now()}.${leadData.fbclid}` : undefined,
+                            fbp: fbpCookie,
+                            client_ip_address: clientIP || 'unknown',
+                            client_user_agent: navigator.userAgent
+                        },
+                        custom_data: {
+                            utm_source: leadData.utm_source,
+                            utm_medium: leadData.utm_medium,
+                            utm_campaign: leadData.utm_campaign,
+                            flow_id: leadData.flow_id,
+                            lead_source: 'heyflow_webhook',
+                            value: 50.00,
+                            currency: 'USD'
+                        }
                     });
                     
                     document.getElementById('status').innerHTML = `
@@ -129,11 +126,22 @@
                             <p><strong>Name:</strong> ${leadData.first_name || ''} ${leadData.last_name || ''}</p>
                             <p><strong>Zip:</strong> ${leadData.zip || 'Not provided'}</p>
                             <p><strong>UTM Source:</strong> ${leadData.utm_source || 'Not provided'}</p>
-                            <p><strong>Status:</strong> Sent to Signals Gateway with full data</p>
+                            <p><strong>Status:</strong> Sent to Signals Gateway with full CAPI-compliant data</p>
                         </div>
                     `;
                     
-                    console.log('Lead sent to Signals Gateway:', leadData);
+                    console.log('Lead sent to Signals Gateway with proper structure:', {
+                        user_data: {
+                            em: leadData.email,
+                            ph: leadData.phone,
+                            fn: leadData.first_name,
+                            ln: leadData.last_name
+                        },
+                        custom_data: {
+                            value: 50.00,
+                            currency: 'USD'
+                        }
+                    });
                     
                 } catch (error) {
                     console.error('Error sending to Signals Gateway:', error);
