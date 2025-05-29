@@ -89,6 +89,8 @@
                     // Get fbp cookie for better attribution
                     const fbpCookie = getCookie('_fbp');
                     
+                    console.log('About to send to Signals Gateway with data:', leadData);
+                    
                     // CORRECTED ENHANCED FORMAT - Maximum EMQ with ALL fields
                     cbq('track', 'Lead', {
                         action_source: 'website',
@@ -96,24 +98,24 @@
                         event_time: eventTime,
                         event_id: eventId,
                         user_data: {
-                            em: leadData.email,
+                            em: leadData.email || undefined,
                             ph: leadData.phone ? leadData.phone.replace(/\D/g, '') : undefined,
-                            fn: leadData.first_name,
-                            ln: leadData.last_name,
-                            zp: leadData.zip,
-                            fbc: leadData.fbclid ? `fb.1.${Date.now()}.${leadData.fbclid}` : undefined,
-                            fbp: leadData.fbp || fbpCookie,
-                            external_id: leadData.external_id,
-                            country: leadData.country,
+                            fn: leadData.first_name || undefined,
+                            ln: leadData.last_name || undefined,
+                            zp: leadData.zip || undefined,
+                            fbc: leadData.fbclid ? `fb.1.${Date.now()}.${leadData.fbclid}` : (leadData.fbc || undefined),
+                            fbp: leadData.fbp || fbpCookie || undefined,
+                            external_id: leadData.external_id || undefined,
+                            country: leadData.country || undefined,
                             client_ip_address: clientIP || 'unknown',
                             client_user_agent: navigator.userAgent
                         },
                         custom_data: {
-                            utm_source: leadData.utm_source,
-                            utm_medium: leadData.utm_medium,
-                            utm_campaign: leadData.utm_campaign,
-                            flow_id: leadData.flow_id,
-                            source: leadData.source,
+                            utm_source: leadData.utm_source || undefined,
+                            utm_medium: leadData.utm_medium || undefined,
+                            utm_campaign: leadData.utm_campaign || undefined,
+                            flow_id: leadData.flow_id || undefined,
+                            source: leadData.source || undefined,
                             lead_source: 'heyflow_webhook',
                             value: 50.00,
                             currency: 'USD'
@@ -135,27 +137,15 @@
                         </div>
                     `;
                     
-                    console.log('ENHANCED Lead sent to Signals Gateway:', {
-                        user_data: {
-                            em: leadData.email,
-                            ph: leadData.phone,
-                            fn: leadData.first_name,
-                            ln: leadData.last_name,
-                            external_id: leadData.external_id,
-                            country: leadData.country
-                        },
-                        custom_data: {
-                            source: leadData.source,
-                            value: 50.00,
-                            currency: 'USD'
-                        }
-                    });
+                    console.log('SUCCESS: Lead sent to Signals Gateway');
                     
                 } catch (error) {
-                    console.error('Error sending to Signals Gateway:', error);
+                    console.error('DETAILED Error sending to Signals Gateway:', error);
+                    console.error('Error stack:', error.stack);
                     document.getElementById('status').innerHTML = `
                         <h2 style="color: red;">✗ Error Processing Lead</h2>
-                        <p>Please check console for details.</p>
+                        <p>Error: ${error.message}</p>
+                        <p>Check console for details.</p>
                     `;
                 }
             } else {
@@ -167,7 +157,7 @@
         }
 
         // Process the lead when page loads
-        setTimeout(processLead, 1000); // Wait 1 second for pixel to load
+        setTimeout(processLead, 2000); // Wait 2 seconds for pixel to load
     </script>
 </body>
 </html>
