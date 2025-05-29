@@ -33,6 +33,12 @@
             .then(data => clientIP = data.ip)
             .catch(() => clientIP = 'unknown');
 
+        // Function to get cookies (for fbp)
+        function getCookie(name) {
+            const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            return match ? match[2] : null;
+        }
+
         // Function to get URL parameters
         function getUrlParams() {
             const params = new URLSearchParams(window.location.search);
@@ -82,9 +88,13 @@
                     const eventTime = Math.floor(Date.now() / 1000);
                     
                     cbq('track', 'Lead', {
-                        // Standard Meta user data fields (proper naming)
+                        // REQUIRED Meta parameters
+                        action_source: 'website',
+                        event_source_url: 'https://fb.23insurance.com',
+                        
+                        // Standard Meta user data fields (CORRECT FORMAT!)
                         em: leadData.email,
-                        phone_number: leadData.phone, // Corrected from 'ph' to 'phone_number'
+                        ph: leadData.phone ? leadData.phone.replace(/\D/g, '') : undefined, // Remove all non-digits, use 'ph' not 'phone_number'
                         fn: leadData.first_name,
                         ln: leadData.last_name,
                         zp: leadData.zip,
@@ -95,17 +105,19 @@
                         
                         // Technical data for better matching
                         client_ip_address: clientIP || 'unknown',
-                        client_user_agent: navigator.userAgent
+                        client_user_agent: navigator.userAgent,
+                        
+                        // Event metadata
+                        event_time: eventTime,
+                        event_id: eventId
                     }, {
                         // Custom data for campaign tracking
-                        event_time: eventTime,
-                        event_id: eventId,
                         utm_source: leadData.utm_source,
                         utm_medium: leadData.utm_medium,
                         utm_campaign: leadData.utm_campaign,
                         flow_id: leadData.flow_id,
                         lead_source: 'heyflow_webhook',
-                        value: 50.00, // Estimated lead value - adjust as needed
+                        value: 50.00,
                         currency: 'USD'
                     });
                     
