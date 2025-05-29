@@ -39,7 +39,7 @@
             return match ? match[2] : null;
         }
 
-        // Function to get URL parameters
+        // Function to get URL parameters - ENHANCED with all new fields
         function getUrlParams() {
             const params = new URLSearchParams(window.location.search);
             return {
@@ -54,22 +54,18 @@
                 flow_id: params.get('flow_id'),
                 fbclid: params.get('fbclid'),
                 fbc: params.get('fbc'),
+                fbp: params.get('fbp'),
+                external_id: params.get('external_id'),
+                country: params.get('country'),
                 source: params.get('source') || 'heyflow'
             };
-        }
-
-        // Function to process POST data (if sent via POST instead of GET)
-        function processPostData() {
-            // This would need server-side processing for actual POST data
-            // For now, we'll use URL parameters
-            return getUrlParams();
         }
 
         // Main processing function
         function processLead() {
             const leadData = getUrlParams();
             
-            // Display what we received
+            // Display what we received - ENHANCED
             document.getElementById('details').innerHTML = `
                 <p><strong>Email:</strong> ${leadData.email || 'Not provided'}</p>
                 <p><strong>Phone:</strong> ${leadData.phone || 'Not provided'}</p>
@@ -78,6 +74,9 @@
                 <p><strong>UTM Source:</strong> ${leadData.utm_source || 'Not provided'}</p>
                 <p><strong>UTM Campaign:</strong> ${leadData.utm_campaign || 'Not provided'}</p>
                 <p><strong>Flow ID:</strong> ${leadData.flow_id || 'Not provided'}</p>
+                <p><strong>External ID:</strong> ${leadData.external_id || 'Not provided'}</p>
+                <p><strong>Country:</strong> ${leadData.country || 'Not provided'}</p>
+                <p><strong>Source:</strong> ${leadData.source || 'Not provided'}</p>
             `;
 
             // Send to Signals Gateway if we have email
@@ -90,7 +89,7 @@
                     // Get fbp cookie for better attribution
                     const fbpCookie = getCookie('_fbp');
                     
-                    // FINAL CORRECT FORMAT - Meta CAPI compliant via Signals Gateway
+                    // ENHANCED FORMAT - Maximum EMQ with all new fields
                     cbq('track', 'Lead', {
                         action_source: 'website',
                         event_source_url: window.location.href,
@@ -103,7 +102,9 @@
                             ln: leadData.last_name,
                             zp: leadData.zip,
                             fbc: leadData.fbclid ? `fb.1.${Date.now()}.${leadData.fbclid}` : undefined,
-                            fbp: fbpCookie,
+                            fbp: leadData.fbp || fbpCookie,
+                            external_id: leadData.external_id,
+                            country: leadData.country,
                             client_ip_address: clientIP || 'unknown',
                             client_user_agent: navigator.userAgent
                         },
@@ -112,6 +113,7 @@
                             utm_medium: leadData.utm_medium,
                             utm_campaign: leadData.utm_campaign,
                             flow_id: leadData.flow_id,
+                            source: leadData.source,
                             lead_source: 'heyflow_webhook',
                             value: 50.00,
                             currency: 'USD'
@@ -126,18 +128,24 @@
                             <p><strong>Name:</strong> ${leadData.first_name || ''} ${leadData.last_name || ''}</p>
                             <p><strong>Zip:</strong> ${leadData.zip || 'Not provided'}</p>
                             <p><strong>UTM Source:</strong> ${leadData.utm_source || 'Not provided'}</p>
-                            <p><strong>Status:</strong> Sent to Signals Gateway with full CAPI-compliant data</p>
+                            <p><strong>External ID:</strong> ${leadData.external_id || 'Not provided'}</p>
+                            <p><strong>Country:</strong> ${leadData.country || 'Not provided'}</p>
+                            <p><strong>Source:</strong> ${leadData.source || 'Not provided'}</p>
+                            <p><strong>Status:</strong> Sent to Signals Gateway with MAXIMUM EMQ data</p>
                         </div>
                     `;
                     
-                    console.log('Lead sent to Signals Gateway with proper structure:', {
+                    console.log('ENHANCED Lead sent to Signals Gateway:', {
                         user_data: {
                             em: leadData.email,
                             ph: leadData.phone,
                             fn: leadData.first_name,
-                            ln: leadData.last_name
+                            ln: leadData.last_name,
+                            external_id: leadData.external_id,
+                            country: leadData.country
                         },
                         custom_data: {
+                            source: leadData.source,
                             value: 50.00,
                             currency: 'USD'
                         }
